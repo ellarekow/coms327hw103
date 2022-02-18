@@ -2,6 +2,8 @@
 
 This project generates the distance maps under the actual front end map. There are three maps generated: one for the rival, one for the hiker, and one for the other npc. 
 
+The distance maps are generated with the ```dijkstra_cost()``` method. This is very similar to the path one with some adjustiments. 
+
 To run the project: 
 ```$ make```
 ```$ ./poke327```
