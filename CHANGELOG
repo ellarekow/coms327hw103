@@ -1,0 +1,35 @@
+commit 24939196755dfd2683bd8b116a48a3afc273a626
+Author: ellarekow <ellarekow@gmail.com>
+Date:   Thu Feb 17 22:18:19 2022 -0600
+
+    Created readme
+
+commit fa5d3e0c9a8dfaa4dec4b271932ce48e51b81b03
+Author: ellarekow <ellarekow@gmail.com>
+Date:   Thu Feb 17 21:58:29 2022 -0600
+
+    Fixed issue with printing the same distance
+
+commit 25e062d67d35f05fdd85a435bfde27126998ff49
+Author: ellarekow <ellarekow@gmail.com>
+Date:   Thu Feb 17 21:06:57 2022 -0600
+
+    generated initial algorithm
+
+commit bca5f1b04675861fa27bfce2feaea09a4edabb39
+Author: ellarekow <ellarekow@gmail.com>
+Date:   Sun Feb 13 19:21:15 2022 -0600
+
+    Uploaded prev code from schafer
+
+commit abb0f5c2902adc430fc2c9264826a41e2e8cea6e
+Author: ellarekow <ellarekow@gmail.com>
+Date:   Sun Feb 13 19:19:13 2022 -0600
+
+    gitignore
+
+commit 324a51ac86e9af648922312fc6f2d7cd0c078c71
+Author: Ella Rekow <just.ella2001@gmail.com>
+Date:   Sun Feb 13 15:31:17 2022 -0600
+
+    Initial commit
