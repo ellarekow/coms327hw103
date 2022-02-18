@@ -1,3 +1,5 @@
+//128502317
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -68,7 +70,7 @@ typedef enum __attribute__((__packed__)) terrain_type
   ter_pc
 } terrain_type_t;
 
-typedef enum npc
+typedef enum enum_npc
 {
   npc_hiker,
   npc_rival,
@@ -103,7 +105,12 @@ world_t world;
 
 static int32_t path_cmp(const void *key, const void *with)
 {
-  return ((path_t *)key)->cost - ((path_t *)with)->cost;
+    return ((path_t *)key)->cost - ((path_t *)with)->cost;
+}
+
+static int32_t cost_cmp(const void *key, const void *with)
+{
+    return ((cost_p_t *)key)->cost - ((cost_p_t *)with)->cost;
 }
 
 static int32_t edge_penalty(int8_t x, int8_t y)
@@ -227,75 +234,66 @@ static void dijkstra_path(map_t *m, pair_t from, pair_t to)
   }
 }
 
-static void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
+void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
 {
   static cost_p_t path[MAP_Y][MAP_X], *p;
-  static uint32_t initialized = 0;
   heap_t h;
   uint32_t x, y;
 
   // Init all pos for the paths
   if (npc == npc_hiker)
   {
-    if (!initialized)
+    for (y = 0; y < MAP_Y; y++)
     {
-      for (y = 0; y < MAP_Y; y++)
+      for (x = 0; x < MAP_X; x++)
       {
-        for (x = 0; x < MAP_X; x++)
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+
+        switch (m->map[y][x])
         {
-          path[y][x].pos[dim_y] = y;
-          path[y][x].pos[dim_x] = x;
+        case ter_path:
+        case ter_clearing:
+          m->height[y][x] = 10;
+          break;
 
-          switch (m->map[x][y])
-          {
-          case ter_path:
-          case ter_clearing:
-            m->height[x][y] = 10;
-            break;
+        case ter_grass:
+        case ter_mountain:
+        case ter_forest:
+          m->height[y][x] = 15;
+          break;
 
-          case ter_grass:
-          case ter_mountain:
-          case ter_forest:
-            m->height[x][y] = 15;
-            break;
-
-          default:
-            m->height[x][y] = UINT8_MAX;
-          }
+        default:
+          m->height[y][x] = UINT8_MAX;
         }
       }
-      initialized = 1;
     }
   }
 
   else if (npc == npc_rival || npc == npc_other)
   {
-    if (!initialized)
+    for (y = 0; y < MAP_Y; y++)
     {
-      for (y = 0; y < MAP_Y; y++)
+      for (x = 0; x < MAP_X; x++)
       {
-        for (x = 0; x < MAP_X; x++)
+        path[y][x].pos[dim_y] = y;
+        path[y][x].pos[dim_x] = x;
+
+        switch (m->map[y][x])
         {
-          path[y][x].pos[dim_y] = y;
-          path[y][x].pos[dim_x] = x;
+        case ter_path:
+        case ter_clearing:
+          m->height[y][x] = 10;
+          break;
 
-          switch (m->map[x][y])
-          {
-          case ter_path:
-          case ter_clearing:
-            m->height[x][y] = 10;
-            break;
+        case ter_grass:
+          m->height[y][x] = 20;
+          break;
 
-          case ter_grass:
-            m->height[x][y] = 20;
-            break;
-
-          default:
-            m->height[x][y] = UINT8_MAX;
-          }
+        default:
+          m->height[y][x] = UINT8_MAX;
         }
       }
-      initialized = 1;
     }
   }
 
@@ -312,14 +310,17 @@ static void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
   path[from[dim_y]][from[dim_x]].cost = 0;
 
   // aka sorted tree
-  heap_init(&h, path_cmp, NULL);
+  heap_init(&h, cost_cmp, NULL);
 
   for (y = 1; y < MAP_Y - 1; y++)
   {
     for (x = 1; x < MAP_X - 1; x++)
     {
-      if (path[y][x].cost != INT_MAX)
-        path[y][x].hn = heap_insert(&h, &path[y][x]);
+      if (m->height[y][x] != INT_MAX) {
+          path[y][x].hn = heap_insert(&h, &path[y][x]);
+          if (path[y][x].hn == NULL)
+          printf("insert: %p\n", path[y][x].hn);
+      }
     }
   }
 
@@ -368,7 +369,7 @@ static void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
                                                .hn);
     }
 
-    // DIAGNOL
+    // DIAGONALLLLY
     if ((path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].hn) &&
         (path[p->pos[dim_y] - 1][p->pos[dim_x] - 1].cost >
          ((p->cost + heightpair(p->pos)))))
@@ -393,7 +394,7 @@ static void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
         (path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost >
          ((p->cost + heightpair(p->pos)))))
     {
-      path[p->pos[dim_y - 1]][p->pos[dim_x] + 1].cost =
+      path[p->pos[dim_y] - 1][p->pos[dim_x] + 1].cost =
           ((p->cost + heightpair(p->pos)));
       heap_decrease_key_no_replace(&h, path[p->pos[dim_y] - 1]
                                            [p->pos[dim_x] + 1]
@@ -411,9 +412,9 @@ static void dijkstra_cost(map_t *m, pair_t from, npc_t npc)
     }
   }
 
-  for (y = 0; y < MAP_Y; y++)
+  for (y = 1; y < MAP_Y - 1; y++)
   {
-    for (x = 0; x < MAP_X; x++)
+    for (x = 1; x < MAP_X - 1; x++)
     {
       printf("%02d ", path[y][x].cost % 100);
     }
@@ -1122,25 +1123,11 @@ static int new_map()
 
   do
   {
-    x = rand() % MAP_X;
-    y = rand() % MAP_Y;
+    x = rand() % (MAP_X - 2) + 1;
+    y = rand() % (MAP_Y - 2) + 1;
   } while (world.cur_map->map[y][x] != ter_path);
 
   world.cur_map->map[y][x] = ter_pc;
-
-  pair_t from;
-
-  from[dim_x] = x;
-  from[dim_y] = y;
-
-  printf("hiker:\n");
-  dijkstra_cost(world.cur_map, from, npc_hiker);
-
-  printf("other:\n");
-  dijkstra_cost(world.cur_map, from, npc_other);
-
-  printf("rival:\n");
-  dijkstra_cost(world.cur_map, from, npc_rival);
 
   return 0;
 }
@@ -1149,6 +1136,8 @@ static void print_map()
 {
   int x, y;
   int default_reached = 0;
+
+  pair_t from;
 
   for (y = 0; y < MAP_Y; y++)
   {
@@ -1181,6 +1170,9 @@ static void print_map()
         break;
       case ter_pc:
         putchar('@');
+
+        from[dim_x] = x;
+        from[dim_y] = y;
         break;
       default:
         default_reached = 1;
@@ -1194,6 +1186,15 @@ static void print_map()
   {
     fprintf(stderr, "Default reached in %s\n", __FUNCTION__);
   }
+
+    printf("hiker:\n");
+    dijkstra_cost(world.cur_map, from, npc_hiker);
+
+    printf("other:\n");
+    dijkstra_cost(world.cur_map, from, npc_other);
+
+    printf("rival:\n");
+    dijkstra_cost(world.cur_map, from, npc_rival);
 }
 
 // The world is global because of its size, so init_world is parameterless
